@@ -44,9 +44,6 @@ void Curve::addControlPoints(const std::vector<CurvePoint>& inputPoints)
 void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
-
-	window = 20;
-
 	if (!checkRobust())
 	{
 		return;
@@ -55,28 +52,18 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 	Point start;
 	Point end;
 
-	end = controlPoints[0].position;
-	for (int i = 0; i < window-1; i++)
+	// draw curve from controlPoints[i] to controlPoints[i+1], use 'window' as number of segments.
+	for (int i = 0; i < controlPoints.size() - 1; i++)
 	{
-		start = end;
-		calculatePoint(end, controlPoints[0].time + (float)(i+1) / (float)(window)* (controlPoints.back().time - controlPoints[0].time));
-		DrawLib::drawLine(start, end, curveColor, curveThickness);
+		end = controlPoints[i].position;
+		for (int j = 0; j < window - 1; j++)
+		{
+			start = end;
+			calculatePoint(end, controlPoints[i].time + (float)(j + 1) / (float)(window)* (controlPoints[i+1].time - controlPoints[i].time));
+			DrawLib::drawLine(start, end, curveColor, curveThickness);
+		}
+		DrawLib::drawLine(end, controlPoints[i+1].position, curveColor, curveThickness);
 	}
-	DrawLib::drawLine(end, controlPoints.back().position, curveColor, curveThickness);
-
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function drawCurve is not implemented!" << std::endl;
-		flag = true;
-	}
-	//=========================================================================
-
-	// Robustness: make sure there is at least two control point: start and end points
-	// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
-	// Note that you must draw the whole curve at each frame, that means connecting line segments between each two points on the curve
-	
 	return;
 #endif
 }
