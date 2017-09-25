@@ -45,6 +45,25 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
 
+	window = 20;
+
+	if (!checkRobust())
+	{
+		return;
+	}
+	
+	Point start;
+	Point end;
+
+	end = controlPoints[0].position;
+	for (int i = 0; i < window-1; i++)
+	{
+		start = end;
+		calculatePoint(end, controlPoints[0].time + (float)(i+1) / (float)(window)* (controlPoints.back().time - controlPoints[0].time));
+		DrawLib::drawLine(start, end, curveColor, curveThickness);
+	}
+	DrawLib::drawLine(end, controlPoints.back().position, curveColor, curveThickness);
+
 	//================DELETE THIS PART AND THEN START CODING===================
 	static bool flag = false;
 	if (!flag)
@@ -108,9 +127,9 @@ bool Curve::calculatePoint(Point& outputPoint, float time)
 // Check Roboustness
 bool Curve::checkRobust()
 {
-	if (!controlPoints.size() >= 2)
+	if (! (controlPoints.size() >= 2))
 	{
-		return false
+		return false;
 	}
 
 	return true;
@@ -119,21 +138,16 @@ bool Curve::checkRobust()
 // Find the current time interval (i.e. index of the next control point to follow according to current time)
 bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
-
-	// Check if the end of the curve is reached, or the time is not valid
-	if (time >= controlPoints.back().time)
-	{
-		return false
-	}
 	// Give a inital value to nextPoint
-	if (!nextPoint > 0)
-	{
-		nextPoint = 1;
-	}
+	nextPoint = 1;
 	// Find nextPoint
-	if (time >= controlPoints[nextPoint].time)
+	while (nextPoint < controlPoints.size() && time >= controlPoints[nextPoint].time)
 	{
 		nextPoint += 1;
+	}
+	if (nextPoint == controlPoints.size())
+	{
+		return false;
 	}
 	return true;
 }
@@ -143,6 +157,11 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 {
 	Point newPosition;
 	float normalTime;
+
+	Point p0;
+	Point p1;
+	Vector m0;
+	Vector m1;
 
 	p0 = controlPoints[nextPoint - 1].position;
 	m0 = controlPoints[nextPoint - 1].tangent;
@@ -154,10 +173,10 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 
 	// Calculate position at t = time on Hermite curve
 	newPosition =
-		(2 * time * time * time - 3 * time * time + 1) * p0
-		+ (time * time * time - 2 * time * time + time) * m0
-		+ (-2 * time * time * time + 3 * time * time) * p1
-		+ (time * time * time - time * time) * m1;
+		(2 * normalTime * normalTime * normalTime - 3 * normalTime * normalTime + 1) * p0
+		+ (normalTime * normalTime * normalTime - 2 * normalTime * normalTime + normalTime) * m0
+		+ (-2 * normalTime * normalTime * normalTime + 3 * normalTime * normalTime) * p1
+		+ (normalTime * normalTime * normalTime - normalTime * normalTime) * m1;
 
 	// Return result
 	return newPosition;
@@ -169,29 +188,32 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	Point newPosition;
 	float normalTime;
 
+	Point p0;
+	Point p1;
+	Vector m0;
+	Vector m1;
+
 	p0 = controlPoints[nextPoint - 1].position;
 	p1 = controlPoints[nextPoint].position;
 
 	// Calculate tangents based on postions.
 	// ( It might be better to write a seperate function for it. since you want us to only work in this function so I will hard code it here. 
 
-	switch (nextPoint-1) 
+	if (nextPoint - 1 == 0)
 	{
-	case 0 :
-		m0 = 2(controlPoints[1].position - controlPoints[0].position) - (controlPoints[2].position - controlPoints[0].position) / 2;
-		break;
-	default:
-		m0 = (controlPoints[nextPoint].position) - controlPoints[nextPoint - 2].position) / 2;
-		break;
+		m0 = 2 * (controlPoints[1].position - controlPoints[0].position) - (controlPoints[2].position - controlPoints[0].position) / 2;
 	}
-	switch (nextPoint)
+	else
 	{
-	case controlPoints.size()-1:
-		m1 = 2(controlPoints.end()[-1].position - controlPoints.end()[-2].position) - (controlPoints.end()[-1].position - controlPoints.end()[-3].position) / 2;
-		break;
-	default:
-		m1 = (controlPoints[nextPoint + 1].position) - controlPoints[nextPoint - 1].position) / 2;
-		break;
+		m0 = (controlPoints[nextPoint].position - controlPoints[nextPoint - 2].position) / 2;
+	}
+	if (nextPoint == controlPoints.size() - 1)
+	{
+		m1 = 2 * (controlPoints.end()[-1].position - controlPoints.end()[-2].position) - (controlPoints.end()[-1].position - controlPoints.end()[-3].position) / 2;
+	}
+	else
+	{
+		m1 = (controlPoints[nextPoint + 1].position - controlPoints[nextPoint - 1].position) / 2;
 	}
 
 	// Calculate normalized t on Hermite curve
@@ -199,10 +221,10 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 
 	// Calculate position at t = time on Hermite curve
 	newPosition =
-		(2 * time * time * time - 3 * time * time + 1) * p0
-		+ (time * time * time - 2 * time * time + time) * m0
-		+ (-2 * time * time * time + 3 * time * time) * p1
-		+ (time * time * time - time * time) * m1;
+		(2 * normalTime * normalTime * normalTime - 3 * normalTime * normalTime + 1) * p0
+		+ (normalTime * normalTime * normalTime - 2 * normalTime * normalTime + normalTime) * m0
+		+ (-2 * normalTime * normalTime * normalTime + 3 * normalTime * normalTime) * p1
+		+ (normalTime * normalTime * normalTime - normalTime * normalTime) * m1;
 
 	// Return result
 	return newPosition;
