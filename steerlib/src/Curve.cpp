@@ -199,21 +199,29 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	// Calculate tangents based on postions.
 	// ( It might be better to write a seperate function for it. since you want us to only work in this function so I will hard code it here. 
 
-	if (nextPoint - 1 == 0)
+	if (controlPoints.size() == 2)
 	{
-		m0 = 2 * (controlPoints[1].position - controlPoints[0].position) - (controlPoints[2].position - controlPoints[0].position) / 2;
+		m0 = (controlPoints[1].position - controlPoints[0].position) / 2;
+		m1 = (controlPoints[1].position - controlPoints[0].position) / 2;
 	}
 	else
 	{
-		m0 = (controlPoints[nextPoint].position - controlPoints[nextPoint - 2].position) / 2;
-	}
-	if (nextPoint == controlPoints.size() - 1)
-	{
-		m1 = 2 * (controlPoints.end()[-1].position - controlPoints.end()[-2].position) - (controlPoints.end()[-1].position - controlPoints.end()[-3].position) / 2;
-	}
-	else
-	{
-		m1 = (controlPoints[nextPoint + 1].position - controlPoints[nextPoint - 1].position) / 2;
+		if (nextPoint - 1 == 0)
+		{
+			m0 = 2 * (controlPoints[1].position - controlPoints[0].position) - (controlPoints[2].position - controlPoints[0].position) / 2;
+		}
+		else
+		{
+			m0 = (controlPoints[nextPoint].position - controlPoints[nextPoint - 2].position) / 2;
+		}
+		if (nextPoint == controlPoints.size() - 1)
+		{
+			m1 = 2 * (controlPoints.end()[-1].position - controlPoints.end()[-2].position) - (controlPoints.end()[-1].position - controlPoints.end()[-3].position) / 2;
+		}
+		else
+		{
+			m1 = (controlPoints[nextPoint + 1].position - controlPoints[nextPoint - 1].position) / 2;
+		}
 	}
 
 	// Calculate normalized t on Hermite curve
