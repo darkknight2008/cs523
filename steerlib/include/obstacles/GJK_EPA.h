@@ -20,6 +20,23 @@
 namespace SteerLib
 {
 
+	class STEERLIB_API Simplex
+	{
+	public:
+		//All vertices, since we are working on 2D, there are at most 3 vertices
+		std::vector<Util::Vector> vertices;
+
+		Simplex() : vertices(std::vector<Util::Vector>()) { }
+
+		Simplex(std::vector<Util::Vector> new_vertices) : vertices(new_vertices) { }
+
+		//Push a new vertex v into the simplex, if the number of vertex exceed the limit, pop the one with minimum dot product with vector d
+		void pushPopNewVertex(Util::Vector v, Util::Vector& d);
+
+		//Calculate the point on the simplex S which is cloest to the origin and set it to e. Return false if simplex S contains the origin.
+		bool nearestSimplex(Util::Vector& e);
+	};
+
 	class STEERLIB_API GJK_EPA
 	{
 	public:
@@ -131,7 +148,19 @@ namespace SteerLib
 		static bool intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
 
 	private:
+		//Return the distance from origin to a hyperplane (line in 2D)
+		float lineToOriginDistance(std::vector<Util::Vector>& endpoints);
 
+		//GJK algorithm, if _shapeA intersect _shapeB, return true and return_simplexwill be a simplex in the M sum that contains the origin, else return false
+		bool algorithmGJK(std::vector<Util::Vector>& return_simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+
+		//Return the point on _shape which has the highest dot product with vector d.
+		Util::Vector support(const Util::Vector& d, const std::vector<Util::Vector>& _shape);
+
+		//EPA, calculate the penetration depth and penetration vector
+		void algorithmEPA(float& return_penetration_depth, Util::Vector& return_penetration_vector,
+			const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB,
+			const std::vector<Util::Vector>& S);
 	}; // class GJK_EPA
 
 } // namespace SteerLib
