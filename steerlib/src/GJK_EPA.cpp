@@ -1,6 +1,7 @@
 #include "obstacles/GJK_EPA.h"
 
 
+
 void SteerLib::Simplex::pushPopNewVertex(Util::Vector new_vertices, Util::Vector direction)
 {
 	if (vertices.size() < 3)
