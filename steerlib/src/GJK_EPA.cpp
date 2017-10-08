@@ -1,5 +1,6 @@
 #include "obstacles/GJK_EPA.h"
 
+
 void SteerLib::Simplex::pushPopNewVertex(Util::Vector v, Util::Vector& d)
 {
 	return;
