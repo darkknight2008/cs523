@@ -162,9 +162,6 @@ namespace SteerLib
 		static bool intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
 
 	private:
-		////Return the distance from origin to a hyperplane (line in 2D)
-		//float lineToOriginDistance(std::vector<Util::Vector>& endpoints);
-
 		//GJK algorithm, if _shapeA intersect _shapeB, return true and return_simplexwill be a simplex in the M sum that contains the origin, else return false
 		static bool algorithmGJK(Simplex& return_simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
 

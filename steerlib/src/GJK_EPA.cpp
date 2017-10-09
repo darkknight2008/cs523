@@ -91,11 +91,15 @@ SteerLib::GJK_EPA::GJK_EPA()
 //Look at the GJK_EPA.h header file for documentation and instructions
 bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
-	Simplex return_simplex;
+	Simplex return_simplex = Simplex();
 
 	if (algorithmGJK(return_simplex, _shapeA, _shapeB))
 	{
 		algorithmEPA(return_penetration_depth, return_penetration_vector, _shapeA, _shapeB, return_simplex);
+		if (return_penetration_depth == 0)
+		{
+			return false;
+		}
 		return true;
 	}
 	else
@@ -107,10 +111,6 @@ bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector&
 	return false; // There is no collision
 }
 
-//float SteerLib::GJK_EPA::lineToOriginDistance(std::vector<Util::Vector>& endpoints)
-//{
-//	return 0.0;
-//}
 
 bool SteerLib::GJK_EPA::algorithmGJK(Simplex& return_simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
@@ -125,7 +125,7 @@ bool SteerLib::GJK_EPA::algorithmGJK(Simplex& return_simplex, const std::vector<
 	{
 		support(maxA, direction, _shapeA);
 		support(maxB, -direction, _shapeB);
-		if ((maxA - maxB) * direction <= 0)
+		if ((maxA - maxB) * direction < 0)
 		{
 			return false;
 		}
@@ -144,6 +144,7 @@ bool SteerLib::GJK_EPA::algorithmGJK(Simplex& return_simplex, const std::vector<
 			}
 		}
 	}
+
 	return false;
 }
 
@@ -173,44 +174,72 @@ void SteerLib::GJK_EPA::algorithmEPA(float& return_penetration_depth, Util::Vect
 
 	// We maintain a min heap which contains all edges of the ploygon and their nearest point during expanding, with format <nearest, v1, v2>
 	std::priority_queue<std::vector<Util::Vector>, std::vector<std::vector<Util::Vector>>, Compare> edgeDistanceHeap;
-	//std::vector<Util::Vector> popVector;
+	
+	float minThresh = 0.00001;
 
-	float const minThresh = 0.0001;
 	Util::Vector maxA;
 	Util::Vector maxB;
 	Util::Vector newVertex;
 
 	// push all edges into the heap
 	Util::Vector nearest;
+	//The origin could be at one edge of the simplex. In this case, we will do the first iteration by ourselves. (It can only happen at the begining)
+	int edgeCaseFlag = -1;
 	Simplex::nearestSegment(nearest, s.vertices[0], s.vertices[1]);
+	edgeCaseFlag = (nearest.lengthSquared() == 0) ? 2 : edgeCaseFlag;
 	edgeDistanceHeap.push({ nearest , s.vertices[0], s.vertices[1] });
 	Simplex::nearestSegment(nearest, s.vertices[1], s.vertices[2]);
+	edgeCaseFlag = (nearest.lengthSquared() == 0) ? 0 : edgeCaseFlag;
 	edgeDistanceHeap.push({ nearest , s.vertices[1], s.vertices[2] });
 	Simplex::nearestSegment(nearest, s.vertices[2], s.vertices[0]);
+	edgeCaseFlag = (nearest.lengthSquared() == 0) ? 1 : edgeCaseFlag;
 	edgeDistanceHeap.push({ nearest , s.vertices[2], s.vertices[0] });
 
-	return_penetration_depth = 99999999999;
+	if (edgeCaseFlag != -1)
+	{
+		return_penetration_depth = 0;
+		Util::Vector thirdVector = s.vertices[edgeCaseFlag];
+		// In this case return_penetration_vector will be the one orthogonal to the edge and point out
+		return_penetration_vector = Util::rightSideInXZPlane(s.vertices[(edgeCaseFlag + 1) % 3] - s.vertices[(edgeCaseFlag + 2) % 3]);
+		return_penetration_vector = (return_penetration_vector * thirdVector < 0) ? return_penetration_vector : -return_penetration_vector;
+		// Push this edge on A-B
+		support(maxA, return_penetration_vector, _shapeA);
+		support(maxB, -return_penetration_vector, _shapeB);
+		newVertex = maxA - maxB;
+		if (newVertex * return_penetration_vector < minThresh)
+		{
+			//Finish the expansion. Recall we are caluculate the nearest point in A -B , so we need to reverse it and normalize it
+			//The final return_penetration_vector will be a vector from A to B
+			return_penetration_vector = -normalize(return_penetration_vector);
+			return;
+		}
+		else
+		{
+			// add two new edges into the heap
+			Util::Vector v1 = s.vertices[(edgeCaseFlag + 1) % 3];
+			Util::Vector v2 = s.vertices[(edgeCaseFlag + 2) % 3];
+			edgeDistanceHeap.pop();
+			Simplex::nearestSegment(nearest, newVertex, v1);
+			edgeDistanceHeap.push({ nearest, newVertex, v1 });
+			Simplex::nearestSegment(nearest, newVertex, v2);
+			edgeDistanceHeap.push({ nearest, newVertex, v2 });
+		}
+	}
 	// Do the expansion
 	while (true)
 	{
 		std::vector<Util::Vector> popVector = edgeDistanceHeap.top();
 		return_penetration_depth = popVector[0].length();
-
-		//Deal the edge case
-		if (return_penetration_depth == 0)
-		{
-			return_penetration_vector = Util::Vector(0, 0, 0);
-		}
-
+		return_penetration_vector = popVector[0];
 		// Push this edge on A-B
-		support(maxA, popVector[0], _shapeA);
-		support(maxB, -popVector[0], _shapeB);
+		support(maxA, return_penetration_vector, _shapeA);
+		support(maxB, -return_penetration_vector, _shapeB);
 		newVertex = maxA - maxB;
-		if (newVertex * popVector[0] - return_penetration_depth * return_penetration_depth < minThresh)
+		if (newVertex * return_penetration_vector - return_penetration_depth * return_penetration_depth < minThresh)
 		{
 			//Finish the expansion. Recall we are caluculate the nearest point in A -B , so we need to reverse it and normalize it
 			//The final return_penetration_vector will be a vector from A to B
-			return_penetration_vector = -normalize(popVector[0]);
+			return_penetration_vector = -normalize(return_penetration_vector);
 			return;
 		}
 		else
