@@ -10,12 +10,14 @@
 
 
 #include "util/Geometry.h"
+#include "polypartition.h"
 
 
 #include <vector>
 #include <math.h>
 #include <limits>
 #include <queue>
+#include <list>
 
 
 namespace SteerLib
@@ -160,6 +162,9 @@ namespace SteerLib
 		*  DO NOT MODIFY polygon1.xml
 		*/
 		static bool intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+		static bool convexIntersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+
+		static void convexPartition(std::vector<std::vector<Util::Vector>>& parts, const std::vector<Util::Vector>& _shape);
 
 	private:
 		//GJK algorithm, if _shapeA intersect _shapeB, return true and return_simplexwill be a simplex in the M sum that contains the origin, else return false

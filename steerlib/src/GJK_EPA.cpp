@@ -91,6 +91,37 @@ SteerLib::GJK_EPA::GJK_EPA()
 //Look at the GJK_EPA.h header file for documentation and instructions
 bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
+	TPPLPoint a;
+	int numOfIntersect = 0;
+	std::vector<std::vector<Util::Vector>> partsA = {};
+	std::vector<std::vector<Util::Vector>> partsB = {};
+	convexPartition(partsA, _shapeA);
+	convexPartition(partsB, _shapeB);
+	
+	for (int i = 1; i < partsA.size(); i++)
+	{
+		for (int j = 1; j < partsB.size(); j++)
+		{
+			if (convexIntersect(return_penetration_depth, return_penetration_vector, _shapeA, _shapeB))
+			{
+				numOfIntersect += 1;
+			}
+		}
+	}
+	switch (numOfIntersect) {
+	case 0:
+		return false;
+	case 1:
+		return true;
+	case 2:
+		return_penetration_depth = -1;
+		return_penetration_vector = Util::Vector(-1,-1,1);
+		return true;
+	}
+}
+
+bool SteerLib::GJK_EPA::convexIntersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
+{
 	Simplex return_simplex = Simplex();
 
 	if (algorithmGJK(return_simplex, _shapeA, _shapeB))
@@ -104,13 +135,10 @@ bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector&
 	}
 	else
 	{
-		return_penetration_depth = 0;
-		return_penetration_vector = {};
 		return false;
 	}
 	return false; // There is no collision
 }
-
 
 bool SteerLib::GJK_EPA::algorithmGJK(Simplex& return_simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
@@ -254,6 +282,36 @@ void SteerLib::GJK_EPA::algorithmEPA(float& return_penetration_depth, Util::Vect
 			edgeDistanceHeap.push({ nearest, newVertex, v2 });
 		}
 	}
+	return;
+}
+
+void SteerLib::GJK_EPA::convexPartition(std::vector<std::vector<Util::Vector>>& parts, const std::vector<Util::Vector>& _shape)
+{
+	TPPLPoly polygon = TPPLPoly();
+	std::list<TPPLPoly> partition;
+
+	polygon.Init(_shape.size());
+	for (int i = 1; i < _shape.size(); i++)
+	{
+		polygon[i].x = _shape[i].x;
+		polygon[i].y = _shape[i].z;
+	}
+	TPPLPartition pp;
+	pp.ConvexPartition_HM(&polygon, &partition);
+
+
+	TPPLPoly *poly;
+	for (std::list<TPPLPoly>::iterator it = partition.begin(); it != partition.end(); ++it)
+	{
+		poly = &*it;
+		std::vector<Util::Vector> convex = {};
+		for (int j = 1; j < poly->GetNumPoints(); j++)
+		{
+			convex.push_back(Util::Vector((*poly)[j].x, 0, (*poly)[j].y));
+		}
+		parts.push_back(convex);
+	}
+	std::cerr << "Oh!" << std::endl;
 	return;
 }
 
