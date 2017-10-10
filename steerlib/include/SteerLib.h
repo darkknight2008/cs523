@@ -21,6 +21,8 @@
 #include "Globals.h"
 #include "Util.h"
 
+#include "polypartition.h"
+
 #include "recfileio/RecFileIO.h"
 
 #include "testcaseio/TestCaseIO.h"
