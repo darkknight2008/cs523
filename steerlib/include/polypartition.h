@@ -18,8 +18,8 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //THE SOFTWARE.
 
-#ifndef __STEERLIB_POLYPARTITION_H
-#define __STEERLIB_POLYPARTITION_H
+#ifndef POLYPARTITION_H
+#define POLYPARTITION_H
 
 #include <list>
 #include <set>
@@ -32,7 +32,7 @@ typedef double tppl_float;
 namespace SteerLib {
 
 	//2D point structure
-	struct STEERLIB_API TPPLPoint {
+	struct TPPLPoint {
 		tppl_float x;
 		tppl_float y;
 		// User-specified vertex identifier.  Note that this isn't used internally
@@ -80,7 +80,7 @@ namespace SteerLib {
 
 
 	//Polygon implemented as an array of points with a 'hole' flag
-	class STEERLIB_API TPPLPoly {
+	class TPPLPoly {
 	protected:
 
 		TPPLPoint *points;
@@ -148,7 +148,7 @@ namespace SteerLib {
 	};
 
 
-	class STEERLIB_API TPPLPartition {
+	class TPPLPartition {
 	protected:
 		struct PartitionVertex {
 			bool isActive;
