@@ -27,7 +27,7 @@
 #include <set>
 #include <polypartition.h>
 
-using namespace std;
+using namespace SteerLib;
 
 #define TPPL_VERTEXTYPE_REGULAR 0
 #define TPPL_VERTEXTYPE_START 1
@@ -171,9 +171,9 @@ int TPPLPartition::Intersects(TPPLPoint &p11, TPPLPoint &p12, TPPLPoint &p21, TP
 }
 
 //removes holes from inpolys by merging them with non-holes
-int TPPLPartition::RemoveHoles(list<TPPLPoly> *inpolys, list<TPPLPoly> *outpolys) {
-	list<TPPLPoly> polys;
-	list<TPPLPoly>::iterator holeiter, polyiter, iter, iter2;
+int TPPLPartition::RemoveHoles(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *outpolys) {
+	std::list<TPPLPoly> polys;
+	std::list<TPPLPoly>::iterator holeiter, polyiter, iter, iter2;
 	long i, i2, holepointindex, polypointindex;
 	TPPLPoint holepoint, polypoint, bestpolypoint;
 	TPPLPoint linep1, linep2;
@@ -376,7 +376,7 @@ void TPPLPartition::UpdateVertex(PartitionVertex *v, PartitionVertex *vertices, 
 }
 
 //triangulation by ear removal
-int TPPLPartition::Triangulate_EC(TPPLPoly *poly, list<TPPLPoly> *triangles) {
+int TPPLPartition::Triangulate_EC(TPPLPoly *poly, std::list<TPPLPoly> *triangles) {
 	long numvertices;
 	PartitionVertex *vertices = NULL;
 	PartitionVertex *ear = NULL;
@@ -451,9 +451,9 @@ int TPPLPartition::Triangulate_EC(TPPLPoly *poly, list<TPPLPoly> *triangles) {
 	return 1;
 }
 
-int TPPLPartition::Triangulate_EC(list<TPPLPoly> *inpolys, list<TPPLPoly> *triangles) {
-	list<TPPLPoly> outpolys;
-	list<TPPLPoly>::iterator iter;
+int TPPLPartition::Triangulate_EC(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *triangles) {
+	std::list<TPPLPoly> outpolys;
+	std::list<TPPLPoly>::iterator iter;
 
 	if (!RemoveHoles(inpolys, &outpolys)) return 0;
 	for (iter = outpolys.begin(); iter != outpolys.end(); iter++) {
@@ -462,9 +462,9 @@ int TPPLPartition::Triangulate_EC(list<TPPLPoly> *inpolys, list<TPPLPoly> *trian
 	return 1;
 }
 
-int TPPLPartition::ConvexPartition_HM(TPPLPoly *poly, list<TPPLPoly> *parts) {
-	list<TPPLPoly> triangles;
-	list<TPPLPoly>::iterator iter1, iter2;
+int TPPLPartition::ConvexPartition_HM(TPPLPoly *poly, std::list<TPPLPoly> *parts) {
+	std::list<TPPLPoly> triangles;
+	std::list<TPPLPoly>::iterator iter1, iter2;
 	TPPLPoly *poly1 = NULL, *poly2 = NULL;
 	TPPLPoly newpoly;
 	TPPLPoint d1, d2, p1, p2, p3;
@@ -562,9 +562,9 @@ int TPPLPartition::ConvexPartition_HM(TPPLPoly *poly, list<TPPLPoly> *parts) {
 	return 1;
 }
 
-int TPPLPartition::ConvexPartition_HM(list<TPPLPoly> *inpolys, list<TPPLPoly> *parts) {
-	list<TPPLPoly> outpolys;
-	list<TPPLPoly>::iterator iter;
+int TPPLPartition::ConvexPartition_HM(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *parts) {
+	std::list<TPPLPoly> outpolys;
+	std::list<TPPLPoly>::iterator iter;
 
 	if (!RemoveHoles(inpolys, &outpolys)) return 0;
 	for (iter = outpolys.begin(); iter != outpolys.end(); iter++) {
@@ -576,14 +576,14 @@ int TPPLPartition::ConvexPartition_HM(list<TPPLPoly> *inpolys, list<TPPLPoly> *p
 //minimum-weight polygon triangulation by dynamic programming
 //O(n^3) time complexity
 //O(n^2) space complexity
-int TPPLPartition::Triangulate_OPT(TPPLPoly *poly, list<TPPLPoly> *triangles) {
+int TPPLPartition::Triangulate_OPT(TPPLPoly *poly, std::list<TPPLPoly> *triangles) {
 	long i, j, k, gap, n;
 	DPState **dpstates = NULL;
 	TPPLPoint p1, p2, p3, p4;
 	long bestvertex;
 	tppl_float weight, minweight, d1, d2;
 	Diagonal diagonal, newdiagonal;
-	list<Diagonal> diagonals;
+	std::list<Diagonal> diagonals;
 	TPPLPoly triangle;
 	int ret = 1;
 
@@ -708,7 +708,7 @@ int TPPLPartition::Triangulate_OPT(TPPLPoly *poly, list<TPPLPoly> *triangles) {
 
 void TPPLPartition::UpdateState(long a, long b, long w, long i, long j, DPState2 **dpstates) {
 	Diagonal newdiagonal;
-	list<Diagonal> *pairs = NULL;
+	std::list<Diagonal> *pairs = NULL;
 	long w2;
 
 	w2 = dpstates[a][b].weight;
@@ -731,8 +731,8 @@ void TPPLPartition::UpdateState(long a, long b, long w, long i, long j, DPState2
 }
 
 void TPPLPartition::TypeA(long i, long j, long k, PartitionVertex *vertices, DPState2 **dpstates) {
-	list<Diagonal> *pairs = NULL;
-	list<Diagonal>::iterator iter, lastiter;
+	std::list<Diagonal> *pairs = NULL;
+	std::list<Diagonal>::iterator iter, lastiter;
 	long top;
 	long w;
 
@@ -762,8 +762,8 @@ void TPPLPartition::TypeA(long i, long j, long k, PartitionVertex *vertices, DPS
 }
 
 void TPPLPartition::TypeB(long i, long j, long k, PartitionVertex *vertices, DPState2 **dpstates) {
-	list<Diagonal> *pairs = NULL;
-	list<Diagonal>::iterator iter, lastiter;
+	std::list<Diagonal> *pairs = NULL;
+	std::list<Diagonal>::iterator iter, lastiter;
 	long top;
 	long w;
 
@@ -796,19 +796,19 @@ void TPPLPartition::TypeB(long i, long j, long k, PartitionVertex *vertices, DPS
 	UpdateState(i, k, w, j, top, dpstates);
 }
 
-int TPPLPartition::ConvexPartition_OPT(TPPLPoly *poly, list<TPPLPoly> *parts) {
+int TPPLPartition::ConvexPartition_OPT(TPPLPoly *poly, std::list<TPPLPoly> *parts) {
 	TPPLPoint p1, p2, p3, p4;
 	PartitionVertex *vertices = NULL;
 	DPState2 **dpstates = NULL;
 	long i, j, k, n, gap;
-	list<Diagonal> diagonals, diagonals2;
+	std::list<Diagonal> diagonals, diagonals2;
 	Diagonal diagonal, newdiagonal;
-	list<Diagonal> *pairs = NULL, *pairs2 = NULL;
-	list<Diagonal>::iterator iter, iter2;
+	std::list<Diagonal> *pairs = NULL, *pairs2 = NULL;
+	std::list<Diagonal>::iterator iter, iter2;
 	int ret;
 	TPPLPoly newpoly;
-	list<long> indices;
-	list<long>::iterator iiter;
+	std::list<long> indices;
+	std::list<long>::iterator iiter;
 	bool ijreal, jkreal;
 
 	n = poly->GetNumPoints();
@@ -1068,8 +1068,8 @@ int TPPLPartition::ConvexPartition_OPT(TPPLPoly *poly, list<TPPLPoly> *parts) {
 //the algorithm used here is outlined in the book
 //"Computational Geometry: Algorithms and Applications" 
 //by Mark de Berg, Otfried Cheong, Marc van Kreveld and Mark Overmars
-int TPPLPartition::MonotonePartition(list<TPPLPoly> *inpolys, list<TPPLPoly> *monotonePolys) {
-	list<TPPLPoly>::iterator iter;
+int TPPLPartition::MonotonePartition(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *monotonePolys) {
+	std::list<TPPLPoly>::iterator iter;
 	MonotoneVertex *vertices = NULL;
 	long i, numvertices, vindex, vindex2, newnumvertices, maxnumvertices;
 	long polystartindex, polyendindex;
@@ -1141,12 +1141,12 @@ int TPPLPartition::MonotonePartition(list<TPPLPoly> *inpolys, list<TPPLPoly> *mo
 	//binary search tree that holds edges intersecting the scanline
 	//note that while set doesn't actually have to be implemented as a tree
 	//complexity requirements for operations are the same as for the balanced binary search tree
-	set<ScanLineEdge> edgeTree;
+	std::set<ScanLineEdge> edgeTree;
 	//store iterators to the edge tree elements
 	//this makes deleting existing edges much faster
-	set<ScanLineEdge>::iterator *edgeTreeIterators, edgeIter;
-	edgeTreeIterators = new set<ScanLineEdge>::iterator[maxnumvertices];
-	pair<set<ScanLineEdge>::iterator, bool> edgeTreeRet;
+	std::set<ScanLineEdge>::iterator *edgeTreeIterators, edgeIter;
+	edgeTreeIterators = new std::set<ScanLineEdge>::iterator[maxnumvertices];
+	std::pair<std::set<ScanLineEdge>::iterator, bool> edgeTreeRet;
 	for (i = 0; i<numvertices; i++) edgeTreeIterators[i] = edgeTree.end();
 
 	//for each vertex
@@ -1333,8 +1333,8 @@ int TPPLPartition::MonotonePartition(list<TPPLPoly> *inpolys, list<TPPLPoly> *mo
 
 //adds a diagonal to the doubly-connected list of vertices
 void TPPLPartition::AddDiagonal(MonotoneVertex *vertices, long *numvertices, long index1, long index2,
-	char *vertextypes, set<ScanLineEdge>::iterator *edgeTreeIterators,
-	set<ScanLineEdge> *edgeTree, long *helpers)
+	char *vertextypes, std::set<ScanLineEdge>::iterator *edgeTreeIterators,
+	std::set<ScanLineEdge> *edgeTree, long *helpers)
 {
 	long newindex1, newindex2;
 
@@ -1420,7 +1420,7 @@ bool TPPLPartition::ScanLineEdge::operator < (const ScanLineEdge & other) const 
 
 //triangulates monotone polygon
 //O(n) time, O(n) space complexity
-int TPPLPartition::TriangulateMonotone(TPPLPoly *inPoly, list<TPPLPoly> *triangles) {
+int TPPLPartition::TriangulateMonotone(TPPLPoly *inPoly, std::list<TPPLPoly> *triangles) {
 	long i, i2, j, topindex, bottomindex, leftindex, rightindex, vindex;
 	TPPLPoint *points = NULL;
 	long numpoints;
@@ -1562,9 +1562,9 @@ int TPPLPartition::TriangulateMonotone(TPPLPoly *inPoly, list<TPPLPoly> *triangl
 	return 1;
 }
 
-int TPPLPartition::Triangulate_MONO(list<TPPLPoly> *inpolys, list<TPPLPoly> *triangles) {
-	list<TPPLPoly> monotone;
-	list<TPPLPoly>::iterator iter;
+int TPPLPartition::Triangulate_MONO(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *triangles) {
+	std::list<TPPLPoly> monotone;
+	std::list<TPPLPoly>::iterator iter;
 
 	if (!MonotonePartition(inpolys, &monotone)) return 0;
 	for (iter = monotone.begin(); iter != monotone.end(); iter++) {
@@ -1573,8 +1573,8 @@ int TPPLPartition::Triangulate_MONO(list<TPPLPoly> *inpolys, list<TPPLPoly> *tri
 	return 1;
 }
 
-int TPPLPartition::Triangulate_MONO(TPPLPoly *poly, list<TPPLPoly> *triangles) {
-	list<TPPLPoly> polys;
+int TPPLPartition::Triangulate_MONO(TPPLPoly *poly, std::list<TPPLPoly> *triangles) {
+	std::list<TPPLPoly> polys;
 	polys.push_back(*poly);
 
 	return Triangulate_MONO(&polys, triangles);
