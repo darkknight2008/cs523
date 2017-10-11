@@ -38,7 +38,7 @@ bool SteerLib::Simplex::nearestSimplex(Util::Vector& nearest)
 		std::vector<Util::Vector> nearests(3);
 		for (int i = 0; i < 3; i++)
 		{
-			sides[i] = nearestSegment(nearests[i], vertices[0], vertices[1]);
+			sides[i] = nearestSegment(nearests[i], vertices[i], vertices[(i + 1) % 3]);
 		}
 		if (sides[0] == sides[1] && sides[1] == sides[2])
 		{
@@ -80,7 +80,7 @@ bool SteerLib::Simplex::nearestSegment(Util::Vector& nearest, Util::Vector v1, U
 	{
 		nearest = (1 - t) * v1 + t * v2;
 	}
-	bool side = true ? (v2 - v1) * v2 > 0 : false;
+	bool side = (Util::cross(v1 - v2, v2).y > 0) ? true : false;
 	return side;
 }
 
