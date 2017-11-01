@@ -28,6 +28,8 @@
 // #define DRAW_HISTORIES 1
 // #define DRAW_COLLISIONS 1
 
+#define BEHAVIORS_TYPE_QUEUEING 0
+
 
 class SocialForcesAgent : public SteerLib::AgentInterface
 {
@@ -43,6 +45,7 @@ public:
 	Util::Point position() const { return _position; }
 	Util::Vector forward() const { return _forward; }
 	Util::Vector velocity() const {return _velocity; }
+	Util::Color color() const { return _color; }
 	float radius() const { return _radius; }
 	const SteerLib::AgentGoalInfo & currentGoal() const { return _goalQueue.front(); }
 	size_t id() const { return id_;}
@@ -112,6 +115,10 @@ private:
 	// holds the location of the best local target along the midtermpath
 
 	friend class SocialForcesAIModule;
+
+	Util::Vector QueueForce(float dt);
+	Util::Vector PursueAndEvade(float dt);
+	Util::Vector SpiralForce(float dt);
 
 };
 

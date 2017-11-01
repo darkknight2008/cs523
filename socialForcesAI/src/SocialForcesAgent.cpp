@@ -429,7 +429,6 @@ Util::Vector SocialForcesAgent::calcRepulsionForce(float dt)
 
 Util::Vector SocialForcesAgent::calcAgentRepulsionForce(float dt)
 {
-
 	Util::Vector agent_repulsion_force = Util::Vector(0,0,0);
 
 	std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
@@ -819,7 +818,15 @@ void SocialForcesAgent::updateAI(float timeStamp, float dt, unsigned int frameNu
 		alpha=0;
 	}
 
+	//std::cerr << repulsionForce << std::endl;
+
+	//_velocity = (prefForce) + repulsionForce + proximityForce;
+
+
 	_velocity = (prefForce) + repulsionForce + proximityForce;
+	_velocity += 0 * 3 * QueueForce(dt) + 0 * 10 * PursueAndEvade(dt) + 0.3 * SpiralForce(dt);
+
+
 	// _velocity = (prefForce);
 	// _velocity = velocity() + repulsionForce + proximityForce;
 
@@ -984,4 +991,101 @@ void SocialForcesAgent::draw()
 
 #endif
 }
+
+Util::Vector SocialForcesAgent::QueueForce(float dt)
+{
+	Util::Vector queue_force = Util::Vector(0, 0, 0);
+	Util::Vector selfToOther = Util::Vector(0, 0, 0);
+
+	std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
+	getSimulationEngine()->getSpatialDatabase()->getItemsInRange(_neighbors,
+		_position.x - (this->_radius + _SocialForcesParams.sf_query_radius),
+		_position.x + (this->_radius + _SocialForcesParams.sf_query_radius),
+		_position.z - (this->_radius + _SocialForcesParams.sf_query_radius),
+		_position.z + (this->_radius + _SocialForcesParams.sf_query_radius),
+		dynamic_cast<SteerLib::SpatialDatabaseItemPtr>(this));
+
+	SteerLib::AgentInterface * tmp_agent;
+	for (std::set<SteerLib::SpatialDatabaseItemPtr>::iterator neighbour = _neighbors.begin(); neighbour != _neighbors.end(); neighbour++)
+	{
+		if ((*neighbour)->isAgent())
+		{
+			tmp_agent = dynamic_cast<SteerLib::AgentInterface *>(*neighbour);
+		}
+		else
+		{
+			continue;
+		}
+		if (id() != tmp_agent->id() && velocity().lengthSquared() > 0.00000001)
+		{
+			selfToOther = tmp_agent->position() - position();
+			if (selfToOther * velocity() >= 0.000000001 && velocity() * tmp_agent->velocity() > 0)
+			{
+				queue_force += dt * exp(-1 * selfToOther.length()) * (selfToOther - (1.5 / velocity().lengthSquared()) * (selfToOther * velocity()) * velocity());
+			}
+		}
+	}
+	if (queue_force.x == queue_force.x)
+	{
+		return queue_force;
+	}
+	return Util::Vector(0, 0, 0);
+}
+
+Util::Vector SocialForcesAgent::PursueAndEvade(float dt)
+{
+	if (color().r == 0.0 && color().g == 0.0 && color().b == 1.0f)
+	{
+		Util::Vector pursue_evade_force = Util::Vector(0, 0, 0);
+		Util::Vector selfToOther = Util::Vector(0, 0, 0);
+
+		std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
+		getSimulationEngine()->getSpatialDatabase()->getItemsInRange(_neighbors,
+			_position.x - (this->_radius + _SocialForcesParams.sf_query_radius),
+			_position.x + (this->_radius + _SocialForcesParams.sf_query_radius),
+			_position.z - (this->_radius + _SocialForcesParams.sf_query_radius),
+			_position.z + (this->_radius + _SocialForcesParams.sf_query_radius),
+			dynamic_cast<SteerLib::SpatialDatabaseItemPtr>(this));
+
+		SocialForcesAgent * tmp_agent;
+		for (std::set<SteerLib::SpatialDatabaseItemPtr>::iterator neighbour = _neighbors.begin(); neighbour != _neighbors.end(); neighbour++)
+		{
+			if ((*neighbour)->isAgent())
+			{
+				tmp_agent = dynamic_cast<SocialForcesAgent *>(*neighbour);
+				selfToOther = tmp_agent->position() - position();
+				if (tmp_agent->color().r == 1.0 && tmp_agent->color().g == 0.0 && tmp_agent->color().b == 0.0f)
+				{
+					pursue_evade_force += -dt * exp(-1 * selfToOther.length()) * Util::normalize(selfToOther);
+				}
+				else if (tmp_agent->color().r == 0.0 && tmp_agent->color().g == 1.0 && tmp_agent->color().b == 0.0f)
+				{
+					pursue_evade_force += dt * exp(-1 * selfToOther.length()) * Util::normalize(selfToOther);
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return pursue_evade_force;
+	}
+	else
+	{
+		return Util::Vector(0, 0, 0);
+	}
+}
+
+Util::Vector SocialForcesAgent::SpiralForce(float dt)
+{
+	Util::Vector spiral_force = Util::Vector(0, 0, 0);
+	Util::Vector selfToGoal = Util::Vector(0, 0, 0);
+	SteerLib::AgentGoalInfo goalInfo = _goalQueue.front();
+
+	selfToGoal = goalInfo.targetLocation - position();
+	spiral_force += dt * Util::rightSideInXZPlane(selfToGoal);
+
+	return spiral_force;
+}
+
 
