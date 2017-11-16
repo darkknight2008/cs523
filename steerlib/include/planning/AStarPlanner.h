@@ -12,6 +12,8 @@
 #include <stack>
 #include <set>
 #include <map>
+#include <unordered_map>
+#include <queue>
 #include "SteerLib.h"
 
 namespace SteerLib
@@ -20,8 +22,8 @@ namespace SteerLib
 	/*
 		@function The AStarPlannerNode class gives a suggested container to build your search tree nodes.
 		@attributes 
-		f : the f value of the node
 		g : the cost from the start, for the node
+		f : the f value of the node
 		point : the point in (x,0,z) space that corresponds to the current node
 		parent : the pointer to the parent AStarPlannerNode, so that retracing the path is possible.
 		@operators 
@@ -30,33 +32,33 @@ namespace SteerLib
 	*/
 	class STEERLIB_API AStarPlannerNode{
 		public:
-			double f;
 			double g;
+			double f;
 			Util::Point point;
 			AStarPlannerNode* parent;
+			AStarPlannerNode() { };
 			AStarPlannerNode(Util::Point _point, double _g, double _f, AStarPlannerNode* _parent)
 			{
+				g = _g;
 				f = _f;
 				point = _point;
-				g = _g;
 				parent = _parent;
 			}
-			bool operator<(AStarPlannerNode other) const
-		    {
-		        return this->f < other.f;
-		    }
-		    bool operator>(AStarPlannerNode other) const
-		    {
-		        return this->f > other.f;
-		    }
+
+			//bool operator<(AStarPlannerNode other) const
+		 //   {
+		 //       return this->f < other.f;
+		 //   }
+		 //   bool operator>(AStarPlannerNode other) const
+		 //   {
+		 //       return this->f > other.f;
+		 //   }
 		    bool operator==(AStarPlannerNode other) const
 		    {
 		        return ((this->point.x == other.point.x) && (this->point.z == other.point.z));
 		    }
 
 	};
-
-	
 
 	class STEERLIB_API AStarPlanner{
 		public:
@@ -77,7 +79,7 @@ namespace SteerLib
 				[Z_GRID-OBSTACLE_CLEARANCE, Z_GRID+OBSTACLE_CLEARANCE]]
 				This function also contains the griddatabase call that gets traversal costs.
 			*/
-			bool canBeTraversed ( int id );
+			bool canBeTraversed ( int id, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase);
 			/*
 				@function getPointFromGridIndex accepts the grid index as input and returns an Util::Point corresponding to the center of that cell.
 			*/
@@ -98,9 +100,26 @@ namespace SteerLib
 			bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
 		private:
 			SteerLib::SpatialDataBaseInterface * gSpatialDatabase;
+
+			float getH(Util::Point a, Util::Point b);
+
+			bool weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+			bool ARAstar(float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+			bool ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+	
+			void generatePath(AStarPlannerNode Start, AStarPlannerNode Goal, std::vector<Util::Point>& agent_path);
+			std::list<Util::Point> getNeighoburs(Util::Point v, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase);
 	};
 
-
+	class STEERLIB_API Compare
+	{
+	public:
+		bool operator() (AStarPlannerNode const& a, AStarPlannerNode const& b) const
+		{
+			//Recall we need the edge with smallest distance to the origin
+			return (a.f + 0.0000001 * a.g < b.f + 0.0000001 * b.g);
+		}
+	};
 }
 
 
