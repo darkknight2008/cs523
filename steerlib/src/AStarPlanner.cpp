@@ -73,9 +73,12 @@ namespace SteerLib
 	{
 		gSpatialDatabase = _gSpatialDatabase;
 
+		//float epsilon = 1;
+		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
-		float epsilon = 1;
-		return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		float init_epsilon = 8;
+		float decreaseRate = 8;
+		return ARAstar(init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 	}
 
 	bool AStarPlanner::weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
@@ -183,11 +186,99 @@ namespace SteerLib
 		OPEN.push_back(&Goal);
 		OPEN.push_back(&Start);
 
+		AStarPlannerNode *Vp;
+		AStarPlannerNode *Up;
+
 		while (true)
 		{
 			for (std::unordered_map <int, AStarPlannerNode*>::iterator income = INCONS.begin(); income != INCONS.end(); ++income)
 			{
+				OPEN.push_back(income->second);
+			}
+			INCONS.clear();
+			for (std::vector <AStarPlannerNode*>::iterator p = OPEN.begin(); p != OPEN.end(); ++p)
+			{
+				AStarPlannerNode* q = *p;
+				q->f = q->g + epsilon * getH(q->point, goal);
+			}
+			std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+			CLOSE.clear();
 
+			while (!OPEN.empty())
+			{
+				Vp = OPEN[OPEN.size() - 1];
+
+				//std::cerr << Vp->point << std::endl;
+				//std::cerr << OPEN.size() << std::endl;
+				//std::cerr << Vp->f << " abc " << Goal.f << std::endl;
+
+				if (Vp->f >= Goal.f && !(Vp->point == Goal.point))
+				{	
+					break;
+				}
+
+				OPEN.pop_back();
+
+				if (Vp->point == Goal.point)
+				{
+					if (!Vp->parent)
+					{
+						return false;
+					}
+					generatePath(Start, Goal, agent_path);
+					break;
+				}
+				CLOSE[_gSpatialDatabase->getCellIndexFromLocation(Vp->point)] = Vp;
+				neighbours = getNeighoburs(Vp->point, _gSpatialDatabase);
+				for (std::list<Util::Point>::iterator u = neighbours.begin(); u != neighbours.end(); ++u)
+				{
+					//std::cerr << "check" << *u << std::endl;
+					if (CLOSE.find(_gSpatialDatabase->getCellIndexFromLocation(*u)) == CLOSE.end())
+					{
+						// if u is not in CLOSE
+						if (canBeTraversed(_gSpatialDatabase->getCellIndexFromLocation(*u)))
+						{
+							float g = Vp->g + epsilon * Util::distanceBetween(Vp->point, *u);
+							if (gVALUE.find(_gSpatialDatabase->getCellIndexFromLocation(*u)) == gVALUE.end())
+							{
+								// u is a new node
+								AStarPlannerNode *p = Vp;
+								AStarPlannerNode *Up = new AStarPlannerNode(*u, g, g + epsilon * getH(*u, goal), p);
+								gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Up->point)] = Up;
+
+								OPEN.push_back(Up);
+								std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+							}
+							else
+							{
+								Up = gVALUE.find(_gSpatialDatabase->getCellIndexFromLocation(*u))->second;
+								if (g < Up->g)
+								{
+									Up->f += g - Up->g;
+									Up->g = g;
+									Up->parent = Vp;
+
+									OPEN.push_back(Up);
+									std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+								}
+							}
+						}
+						else
+						{
+							//if not reachable
+							AStarPlannerNode U = AStarPlannerNode(*u, infty, infty, NULL);
+							CLOSE[_gSpatialDatabase->getCellIndexFromLocation(U.point)] = &U;
+						}
+					}
+					else
+					{
+						if (canBeTraversed(_gSpatialDatabase->getCellIndexFromLocation(*u)))
+						{
+							//if u is already in closed set and it a valid position, insert it into INCONS
+							INCONS[_gSpatialDatabase->getCellIndexFromLocation(*u)] = CLOSE[_gSpatialDatabase->getCellIndexFromLocation(*u)];
+						}
+					}
+				}
 			}
 
 
@@ -200,8 +291,6 @@ namespace SteerLib
 				epsilon = MAX(1, epsilon / decreaseRate);
 			}
 		}
-
-
 		return true;
 	}
 
@@ -218,6 +307,8 @@ namespace SteerLib
 	
 	void AStarPlanner::generatePath(AStarPlannerNode& Start, AStarPlannerNode& Goal, std::vector<Util::Point>& agent_path)
 	{
+		agent_path.clear();
+
 		AStarPlannerNode *p = &Goal;
 
 		while (p->point != Start.point)
