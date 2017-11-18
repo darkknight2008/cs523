@@ -139,125 +139,124 @@ namespace SteerLib
 	//		return (a.f + 0.0000001 * a.g > b.f + 0.0000001 * b.g);
 	//	}
 	//};
-//	class MinHeap
-//	{
-//	private:
-//		std::vector<AStarPlannerNode> _vector;
-//		int count = 0;
-//		void BubbleDown(int index);
-//		void BubbleUp(int index);
-//	
-//	public:
-//		void Insert(AStarPlannerNode newNode);
-//		Util::Point GetMin();
-//		void decreaseKey(AStarPlannerNode changeNode);
-//		void DeleteMin();
-//	};
-////MinHeap::MinHeap()
-////{
-////
-////}
-//	void MinHeap::BubbleDown(int index)
-//	{
-//		int leftChildIndex = 2 * index + 1;
-//		int rightChildIndex = 2 * index + 2;
-//		
-//		if (leftChildIndex >= count)
-//			return; //index is a leaf
-//		
-//		int minIndex = index;
-//
-//		if (_vector[index].f > _vector[leftChildIndex].f)
-//		{
-//			minIndex = leftChildIndex;
-//		}
-//		
-//		if ((_vector[index].f = _vector[leftChildIndex].f) && (_vector[index].g > _vector[leftChildIndex].g))
-//		{
-//			minIndex = leftChildIndex;
-//		}
-//		
-//		if ((rightChildIndex < count) && (_vector[minIndex].f > _vector[rightChildIndex].f))
-//		{
-//			minIndex = rightChildIndex;
-//		}
-//		if ((rightChildIndex < count) && (_vector[minIndex].f = _vector[rightChildIndex].f) && (_vector[minIndex].g > _vector[rightChildIndex].g))
-//		{
-//			minIndex = rightChildIndex;
-//		}
-//		
-//		if (minIndex != index)
-//		{
-//			//need to swap
-//			AStarPlannerNode temp = _vector[index];
-//			_vector[index] = _vector[minIndex];
-//			_vector[minIndex] = temp;
-//			BubbleDown(minIndex);
-//		}
-//}
-//	void MinHeap::BubbleUp(int index)
-//	{
-//		if (index == 0)
-//			return;
-//		
-//		int parentIndex = (index - 1) / 2;
-//		
-//		if (_vector[parentIndex].f > _vector[index].f)
-//		{
-//			AStarPlannerNode temp = _vector[parentIndex];
-//			_vector[parentIndex] = _vector[index];
-//			_vector[index] = temp;
-//			BubbleUp(parentIndex);
-//		}
-//		else if ((_vector[parentIndex].f = _vector[index].f) && (_vector[parentIndex].g > _vector[index].g))
-//		{
-//			AStarPlannerNode temp = _vector[parentIndex];
-//			_vector[parentIndex] = _vector[index];
-//			_vector[index] = temp;
-//			BubbleUp(parentIndex);
-//		}
-//	}
-//	
-//	void MinHeap::Insert(AStarPlannerNode newNode)
-//	{
-//		_vector[count] = newNode;
-//		count++;
-//		BubbleUp(count);
-//	}
-//	
-//	void MinHeap::decreaseKey(AStarPlannerNode changeNode)
-//	{
-//		int m;
-//		for (int a = 0; a < count + 1; a++)
-//		{
-//			if (_vector[a].point == changeNode.point)
-//			{
-//				m = a;
-//				break;
-//			}
-//		}
-//		_vector[m] = changeNode;
-//		BubbleDown(m);
-//	}
-//	
-//	void MinHeap::DeleteMin()
-//	{
-//	//int length = _vector.size();
-//		if (count == 0)
-//		{
-//			return;
-//		}
-//		
-//		_vector[0] = _vector[count - 1];
-//		_vector.pop_back();
-//		count--;
-//		BubbleDown(0);
-//	}
-//	
-//	Util::Point MinHeap::GetMin()
-//	{
-//		return _vector[0].point;
-//	}
+
+
+	class MinHeap
+	{
+	private:
+		std::vector<AStarPlannerNode*> _vector;
+		int count = 0;
+		void BubbleDown(int index);
+		void BubbleUp(int index);
+	
+	public:
+		void Insert(AStarPlannerNode* newNode);
+		Util::Point GetMin();
+		void decreaseKey(AStarPlannerNode* changeNode);
+		void DeleteMin();
+	};
+
+	void MinHeap::BubbleDown(int index)
+	{
+		int leftChildIndex = 2 * index + 1;
+		int rightChildIndex = 2 * index + 2;
+		
+		if (leftChildIndex >= count)
+			return; //index is a leaf
+		
+		int minIndex = index;
+
+		if (_vector[index]->f > _vector[leftChildIndex]->f)
+		{
+			minIndex = leftChildIndex;
+		}
+		
+		if ((_vector[index]->f = _vector[leftChildIndex]->f) && (_vector[index]->g > _vector[leftChildIndex]->g))
+		{
+			minIndex = leftChildIndex;
+		}
+		
+		if ((rightChildIndex < count) && (_vector[minIndex]->f > _vector[rightChildIndex]->f))
+		{
+			minIndex = rightChildIndex;
+		}
+		if ((rightChildIndex < count) && (_vector[minIndex]->f = _vector[rightChildIndex]->f) && (_vector[minIndex]->g > _vector[rightChildIndex]->g))
+		{
+			minIndex = rightChildIndex;
+		}
+		
+		if (minIndex != index)
+		{
+			//need to swap
+			AStarPlannerNode* temp = _vector[index];
+			_vector[index] = _vector[minIndex];
+			_vector[minIndex] = temp;
+			BubbleDown(minIndex);
+		}
+}
+	void MinHeap::BubbleUp(int index)
+	{
+		if (index == 0)
+			return;
+		
+		int parentIndex = (index - 1) / 2;
+		
+		if (_vector[parentIndex]->f > _vector[index]->f)
+		{
+			AStarPlannerNode* temp = _vector[parentIndex];
+			_vector[parentIndex] = _vector[index];
+			_vector[index] = temp;
+			BubbleUp(parentIndex);
+		}
+		else if ((_vector[parentIndex]->f = _vector[index]->f) && (_vector[parentIndex]->g > _vector[index]->g))
+		{
+			AStarPlannerNode* temp = _vector[parentIndex];
+			_vector[parentIndex] = _vector[index];
+			_vector[index] = temp;
+			BubbleUp(parentIndex);
+		}
+	}
+	
+	void MinHeap::Insert(AStarPlannerNode* newNode)
+	{
+		_vector[count] = newNode;
+		count++;
+		BubbleUp(count);
+	}
+	
+	void MinHeap::decreaseKey(AStarPlannerNode* changeNode)
+	{
+		int m;
+		for (int a = 0; a < count + 1; a++)
+		{
+			if (_vector[a]->point == changeNode->point)
+			{
+				m = a;
+				break;
+			}
+		}
+		_vector[m] = changeNode;
+		BubbleDown(m);
+	}
+	
+	void MinHeap::DeleteMin()
+	{
+	//int length = _vector.size();
+		if (count == 0)
+		{
+			return;
+		}
+		
+		_vector[0] = _vector[count - 1];
+		_vector.pop_back();
+		count--;
+		BubbleDown(0);
+	}
+	
+	Util::Point MinHeap::GetMin()
+	{
+		return _vector[0]->point;
+	}
 
 
 }
