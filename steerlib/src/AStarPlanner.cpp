@@ -77,17 +77,16 @@ namespace SteerLib
 
 		//!!!!!!!!!!!!!!!! this is AD*  !!!!!!!!!!!!!!!!!!
 		//return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
-		//return false;
 
 		//!!!!!!!!!!!!!!!! this is Weighted A*  !!!!!!!!!!!!!!!!!!
-		//float epsilon = 80;
-		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		float epsilon = 1;
+		return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
 		//!!!!!!!!!!!!!!!! this is ARA*  !!!!!!!!!!!!!!!!!!
-		float init_epsilon = 8;
-		float decreaseRate = 2;
-		float time_limit = 100;
-		return ARAstar(time_limit, init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		//float init_epsilon = 8;
+		//float decreaseRate = 2;
+		//float time_limit = 100;
+		//return ARAstar(time_limit, init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 	}
 
 	bool AStarPlanner::weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
@@ -208,7 +207,7 @@ namespace SteerLib
 		gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Start.point)] = &Start;
 		gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Goal.point)] = &Goal;
 
-		OPEN.push_back(&Goal);
+		//OPEN.push_back(&Goal);
 		OPEN.push_back(&Start);
 
 		AStarPlannerNode *Vp;
@@ -217,7 +216,7 @@ namespace SteerLib
 		while (true)
 		{
 			GetSystemTime(&st);
-			std::cerr << epsilon << std::endl;
+			//std::cerr << epsilon << std::endl;
 			if (st.wMilliseconds - startT >= 1000 * time_limit)
 			{
 				return (agent_path.size() != 0);
@@ -240,11 +239,11 @@ namespace SteerLib
 			{
 				Vp = OPEN[OPEN.size() - 1];
 
-				//std::cerr << Vp->point << std::endl;
+				//std::cerr << Vp->point << Vp -> f << Goal.f <<std::endl;
 				//std::cerr << OPEN.size() << std::endl;
 				//std::cerr << Vp->f << " abc " << Goal.f << std::endl;
 
-				if (Vp->f >= Goal.f && !(Vp->point == Goal.point))
+				if (Vp->f > Goal.f && !(Vp->point == Goal.point))
 				{	
 					break;
 				}
@@ -270,7 +269,7 @@ namespace SteerLib
 						// if u is not in CLOSE
 						if (canBeTraversed(_gSpatialDatabase->getCellIndexFromLocation(*u)))
 						{
-							float g = Vp->g + epsilon* Util::distanceBetween(Vp->point, *u);
+							float g = Vp->g + Util::distanceBetween(Vp->point, *u);
 							if (gVALUE.find(_gSpatialDatabase->getCellIndexFromLocation(*u)) == gVALUE.end())
 							{
 								// u is a new node
@@ -284,6 +283,7 @@ namespace SteerLib
 							else
 							{
 								Up = gVALUE.find(_gSpatialDatabase->getCellIndexFromLocation(*u))->second;
+								Up->f = Up->g + epsilon * getH(Up->point, goal);
 								if (g < Up->g)
 								{
 									Up->f += g - Up->g;
@@ -483,7 +483,7 @@ namespace SteerLib
 		
 		while (p->point != Start.point)
 		{
-			//std::cerr << "path test" << p->point << std::endl;
+			//std::cerr << "path test" << p->point << p->g << std::endl;
 			agent_path.push_back(p->point);
 			p = p->parent;
 		}
