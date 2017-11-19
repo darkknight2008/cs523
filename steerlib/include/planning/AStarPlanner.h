@@ -14,6 +14,7 @@
 #include <map>
 #include <unordered_map>
 #include <queue>
+#include <Windows.h>
 #include "SteerLib.h"
 
 namespace SteerLib
@@ -122,7 +123,7 @@ namespace SteerLib
 			float getH(Util::Point a, Util::Point b);
 
 			bool weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
-			bool ARAstar(float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+			bool ARAstar(float time_limit, float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
 			bool ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, std::unordered_map<int, bool>& new_wall, std::unordered_map <int, bool>& new_palce, bool append_to_path = false);
 	
 			void generatePath(AStarPlannerNode& Start, AStarPlannerNode& Goal, std::vector<Util::Point>& agent_path);

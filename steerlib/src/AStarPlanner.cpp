@@ -76,17 +76,18 @@ namespace SteerLib
 		//std::cerr << "\n test" << std::endl;
 
 		//!!!!!!!!!!!!!!!! this is AD*  !!!!!!!!!!!!!!!!!!
-		return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
-		return false;
+		//return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
+		//return false;
 
 		//!!!!!!!!!!!!!!!! this is Weighted A*  !!!!!!!!!!!!!!!!!!
-		//float epsilon = 8;
+		//float epsilon = 80;
 		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
 		//!!!!!!!!!!!!!!!! this is ARA*  !!!!!!!!!!!!!!!!!!
-		//float init_epsilon = 8;
-		//float decreaseRate = 2;
-		//return ARAstar(init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		float init_epsilon = 8;
+		float decreaseRate = 2;
+		float time_limit = 100;
+		return ARAstar(time_limit, init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 	}
 
 	bool AStarPlanner::weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
@@ -186,8 +187,12 @@ namespace SteerLib
 		return false;
 	}
 
-	bool AStarPlanner::ARAstar(float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
+	bool AStarPlanner::ARAstar(float time_limit, float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
 	{
+		SYSTEMTIME st;
+		GetSystemTime(&st);
+		int startT = st.wMilliseconds;
+
 		float epsilon = init_epsilon;
 
 		std::vector <AStarPlannerNode*> OPEN;
@@ -211,6 +216,13 @@ namespace SteerLib
 
 		while (true)
 		{
+			GetSystemTime(&st);
+			std::cerr << epsilon << std::endl;
+			if (st.wMilliseconds - startT >= 1000 * time_limit)
+			{
+				return (agent_path.size() != 0);
+			}
+
 			for (std::unordered_map <int, AStarPlannerNode*>::iterator income = INCONS.begin(); income != INCONS.end(); ++income)
 			{
 				OPEN.push_back(income->second);
@@ -258,7 +270,7 @@ namespace SteerLib
 						// if u is not in CLOSE
 						if (canBeTraversed(_gSpatialDatabase->getCellIndexFromLocation(*u)))
 						{
-							float g = Vp->g + epsilon * Util::distanceBetween(Vp->point, *u);
+							float g = Vp->g + epsilon* Util::distanceBetween(Vp->point, *u);
 							if (gVALUE.find(_gSpatialDatabase->getCellIndexFromLocation(*u)) == gVALUE.end())
 							{
 								// u is a new node
@@ -300,15 +312,13 @@ namespace SteerLib
 					}
 				}
 			}
-
-
 			if (epsilon == 1)
 			{
 				break;
 			}
 			else
 			{
-				epsilon = MAX(1, epsilon / decreaseRate);
+				epsilon = MAX(1.0, epsilon / decreaseRate);
 			}
 		}
 		return true;
