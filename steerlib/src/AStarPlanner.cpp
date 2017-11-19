@@ -75,12 +75,13 @@ namespace SteerLib
 
 		//std::cerr << "\n test" << std::endl;
 
-		//return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
-		//return false;
+		//!!!!!!!!!!!!!!!! this is AD*  !!!!!!!!!!!!!!!!!!
+		return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
+		return false;
 
 		//!!!!!!!!!!!!!!!! this is Weighted A*  !!!!!!!!!!!!!!!!!!
-		float epsilon = 8;
-		return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		//float epsilon = 8;
+		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
 		//!!!!!!!!!!!!!!!! this is ARA*  !!!!!!!!!!!!!!!!!!
 		//float init_epsilon = 8;
@@ -319,21 +320,22 @@ namespace SteerLib
 		std::list<Util::Point> neighbours;
 		AStarPlannerNode *Vp;
 		AStarPlannerNode *Up;
-		dStart = AStarPlannerNode(start, infty, infty + getH(start, start), NULL);
+		
 		if (new_wall.size() == 0 && new_palce.size() == 0)
-		{
-			std::cerr << "1 test" << std::endl;
-			
+		{	
+			dStart = new AStarPlannerNode(start, infty, infty + getH(start, start), NULL);
 			dGoal = AStarPlannerNode(goal, 0, getH(goal, start), NULL);
-			dgVALUE[_gSpatialDatabase->getCellIndexFromLocation(dStart.point)] = &dStart;
+			dgVALUE[_gSpatialDatabase->getCellIndexFromLocation(dStart->point)] = dStart;
 			dgVALUE[_gSpatialDatabase->getCellIndexFromLocation(dGoal.point)] = &dGoal;
 			dGoal.rhs = 0;
 
-			dOPEN.push_back(&dStart);
+			dOPEN.push_back(dStart);
 			dOPEN.push_back(&dGoal);
 		}
 		else
 		{
+			dStart = dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(start))->second;
+			//std::cerr << "1 test" << std::endl;
 			for (std::unordered_map <int, bool>::iterator it = new_wall.begin(); it != new_wall.end(); ++it)
 			{
 				Util::Point n;
@@ -354,29 +356,30 @@ namespace SteerLib
 					UpdateState(*u);
 				}
 			}
-			
-			//do the update
+			//std::cerr << "2 test" << std::endl;
 		}
 
-		while (!dOPEN.empty() || dStart.rhs != dStart.g)
+		//std::cerr << "Start =  " << dStart->point << std::endl;
+
+		while (!dOPEN.empty() || dStart->rhs != dStart->g)
 		{
 			Vp = dOPEN[dOPEN.size() - 1];
 
 			dOPEN.pop_back();
 
-			std::cerr << "2 test" << std::endl;
-			std::cerr << Vp->point << std::endl;
+			//std::cerr << "3 test" << std::endl;
+			//std::cerr << Vp->point << std::endl;
 
-			if (Vp->point == dStart.point)
+			if (Vp->point == dStart->point)
 			{
-				if (!Vp->parent)
-				{
-					return false;
-				}
-				std::cerr << "almost!" << std::endl;
-				std::cerr << Vp->point << std::endl;
-				generatePath(dGoal, dStart, agent_path);
-				std::reverse(agent_path.begin(), agent_path.end());
+				//std::cerr << "almost!" << std::endl;
+				//std::cerr << Vp->g << "   "  << Vp->rhs << std::endl;
+				//std::cerr << dStart->g << "   " << Vp->rhs << std::endl;
+				dGeneratePath(*dStart, dGoal, agent_path);
+
+				//generatePath(dGoal, *dStart, agent_path);
+				//std::reverse(agent_path.begin(), agent_path.end());
+
 				return true;
 			}
 
@@ -390,12 +393,12 @@ namespace SteerLib
 			else
 			{
 				Vp->g = infty;
-				std::cerr << "2.5 test" << std::endl;
+				//std::cerr << "2.5 test" << std::endl;
 				UpdateState(Vp->point);
 			}
 			for (std::list<Util::Point>::iterator u = neighbours.begin(); u != neighbours.end(); ++u)
 			{
-				std::cerr << "3 test" << *u << std::endl;
+				//std::cerr << "3 test" << *u << std::endl;
 				UpdateState(*u);
 			}
 			
@@ -405,21 +408,17 @@ namespace SteerLib
 
 	float AStarPlanner::dKey(AStarPlannerNode *p)
 	{
-		return MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart.point);
-	}
-
-	bool  AStarPlanner::dCompare(AStarPlannerNode *p, AStarPlannerNode *q)
-	{
-		return dKey(p) > dKey(q);
+		return MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart->point);
 	}
 
 	void AStarPlanner::UpdateState(Util::Point u)
 	{
 		AStarPlannerNode *U;
+		AStarPlannerNode *parent = dStart;
 		if (dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(u)) == dgVALUE.end())
 		{
 			//new node
-			U = new AStarPlannerNode(u, infty, infty + getH(u, dStart.point), NULL);
+			U = new AStarPlannerNode(u, infty, infty + getH(u, dStart->point), NULL);
 			dgVALUE[dgSpatialDatabase->getCellIndexFromLocation(U->point)] = U;
 		}
 		else
@@ -428,7 +427,7 @@ namespace SteerLib
 		}
 		if (U->point != dGoal.point)
 		{
-			U->rhs = 10 * infty;
+			U->rhs = infty;
 			std::list<Util::Point> neighbours = getNeighoburs(u, gSpatialDatabase);
 			for (std::list<Util::Point>::iterator w = neighbours.begin(); w != neighbours.end(); ++w)
 			{
@@ -437,8 +436,12 @@ namespace SteerLib
 					//if we see that Node before
 					if (canBeTraversed(gSpatialDatabase->getCellIndexFromLocation(u)) && canBeTraversed(gSpatialDatabase->getCellIndexFromLocation(*w)))
 					{
-						U->rhs = MIN(U->rhs, dgVALUE[gSpatialDatabase->getCellIndexFromLocation(*w)]->g + Util::distanceBetween(u, *w));
-						std::cerr << "4 test" << u << *w << U->rhs << std::endl;
+						if (dgVALUE[gSpatialDatabase->getCellIndexFromLocation(*w)]->g + Util::distanceBetween(u, *w) < U->rhs)
+						{
+							U->rhs = dgVALUE[gSpatialDatabase->getCellIndexFromLocation(*w)]->g + Util::distanceBetween(u, *w);
+							parent = dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(*w))->second;
+						}
+						//std::cerr << "4 test" << u << *w << U->rhs << std::endl;
 					}
 				}
 			}
@@ -447,9 +450,11 @@ namespace SteerLib
 		dOPEN.erase(std::remove(dOPEN.begin(), dOPEN.end(), U), dOPEN.end());
 		if (U->g != U->rhs)
 		{
+			U->f = dKey(U);
+			U->parent = parent;
 			dOPEN.push_back(U);
 			std::sort(dOPEN.begin(), dOPEN.end(), 
-				[&](AStarPlannerNode *p, AStarPlannerNode *q) {return (MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart.point) > MIN(q->g, q->rhs) + 0.9999 * getH(q->point, dStart.point)); }
+				[&](AStarPlannerNode *p, AStarPlannerNode *q) {return (MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart->point) > MIN(q->g, q->rhs) + 0.9999 * getH(q->point, dStart->point)); }
 				);
 		}
 		return;
@@ -465,9 +470,10 @@ namespace SteerLib
 		agent_path.clear();
 
 		AStarPlannerNode *p = &Goal;
-
+		
 		while (p->point != Start.point)
 		{
+			//std::cerr << "path test" << p->point << std::endl;
 			agent_path.push_back(p->point);
 			p = p->parent;
 		}
@@ -500,6 +506,34 @@ namespace SteerLib
 		return neighbours;
 	}
 
+	void AStarPlanner::dGeneratePath(AStarPlannerNode& Start, AStarPlannerNode& Goal, std::vector<Util::Point>& agent_path)
+	{
+		agent_path.clear();
+		AStarPlannerNode* p = &Start;
+		AStarPlannerNode* pnext = p;
+		while (p->point != Goal.point)
+		{
+			//std::cerr << p->point << std::endl;
+			agent_path.push_back(p->point);
+			p->g = infty;
+			p->rhs = infty;
+			std::list<Util::Point> neighbours = getNeighoburs(p->point, gSpatialDatabase);
+			for (std::list<Util::Point>::iterator w = neighbours.begin(); w != neighbours.end(); ++w)
+			{
+				if (!(dgVALUE.find(gSpatialDatabase->getCellIndexFromLocation(*w)) == dgVALUE.end()))
+				{
+					AStarPlannerNode* q = dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(*w))->second;
+					if (MIN(q->g, q->rhs) <= MIN(pnext->g, pnext->rhs) || pnext == p)
+					{
+						pnext = q;
+					}
+				}
+			}
+			p = pnext;
+		}
+		agent_path.push_back(Goal.point);
+		return;
+	}
 
 	void MinHeap::BubbleDown(int index)
 	{

@@ -172,9 +172,9 @@ void SearchAIModule::preprocessFrame(float timeStamp, float dt, unsigned int fra
 
 	bool b = false;
 
-	for (int i = -30.5; i <= 30.5; i++)
+	for (int i = -40.5; i <= 40.5; i++)
 	{
-		for (int j = -30.5; j <= 30.5; j++)
+		for (int j = -40.5; j <= 40.5; j++)
 		{
 			int p = gSpatialDatabase->getCellIndexFromLocation(i, j);
 			if (map[p] != a.canBeTraversed(p))

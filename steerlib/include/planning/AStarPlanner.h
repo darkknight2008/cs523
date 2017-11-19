@@ -110,11 +110,12 @@ namespace SteerLib
 			std::vector <AStarPlannerNode*> dOPEN;
 			std::unordered_map <int, AStarPlannerNode*> dCLOSE;
 			std::unordered_map <int, AStarPlannerNode*> dgVALUE;
-			AStarPlannerNode dStart;
+			AStarPlannerNode* dStart;
 			AStarPlannerNode dGoal;
 			float dKey(AStarPlannerNode *p);
 			void UpdateState(Util::Point u);
 			bool dCompare(AStarPlannerNode *p, AStarPlannerNode *q);
+			void dGeneratePath(AStarPlannerNode& Start, AStarPlannerNode& Goal, std::vector<Util::Point>& agent_path);
 
 			float infty = 9999999999999999;
 
