@@ -90,13 +90,14 @@ void SearchAgent::reset(const SteerLib::AgentInitialConditions & initialConditio
 }
 
 
-void SearchAgent::computePlan()
+void SearchAgent::computePlan(std::unordered_map <int, bool> new_wall, std::unordered_map <int, bool> new_place)
 {
 	std::cout<<"\nComputing agent plan ";
 	if (!_goalQueue.empty())
 	{
-		Util::Point global_goal = _goalQueue.front().targetLocation;
-		if (astar.computePath(__path, __position, _goalQueue.front().targetLocation, gSpatialDatabase))
+		//Util::Point global_goal = _goalQueue.front().targetLocation;
+		Util::Point global_goal = _goalQueue.back().targetLocation;
+		if (astar.computePath(__path, __position, _goalQueue.back().targetLocation, gSpatialDatabase, new_wall, new_place))
 		{
 
 			while (!_goalQueue.empty())

@@ -11,6 +11,8 @@
 #include "SimulationPlugin.h"
 #include "SearchAIModule.h"
 #include "SearchAgent.h"
+#include <array>
+#include <unordered_map>
 
 #include "LogObject.h"
 #include "LogManager.h"
@@ -19,6 +21,9 @@
 // globally accessible to the SearchAI plugin
 SteerLib::EngineInterface * gEngine;
 SteerLib::SpatialDataBaseInterface * gSpatialDatabase;
+bool changed = false;
+std::unordered_map <int, bool> map;
+SteerLib::AStarPlanner a;
 
 namespace SearchAIGlobals
 {
@@ -144,14 +149,53 @@ void SearchAIModule::preprocessSimulation()
 		std::cout<<"\nAgent :: "<<i<<"/"<<_agents.size()-1;
 		((SearchAgent*)_agents[i])->computePlan();
 	}
+
+	a = SteerLib::AStarPlanner(gSpatialDatabase);
+
+	for (int i = -30; i <= 30; i++)
+	{
+		for (int j = -30; j <= 30; j++)
+		{
+			int p = gSpatialDatabase->getCellIndexFromLocation(i, j);
+			map[p] = a.canBeTraversed(p);
+		}
+	}
+
 }
 
 void SearchAIModule::preprocessFrame(float timeStamp, float dt, unsigned int frameNumber)
 {
-	//TODO does nothing for now
-	if(frameNumber<30)
-	{
+	std::vector<SteerLib::AgentInterface*> _agents = gEngine->getAgents();
 
+	std::unordered_map <int, bool> new_wall;
+	std::unordered_map <int, bool> new_place;
+
+	bool b = false;
+
+	for (int i = -30.5; i <= 30.5; i++)
+	{
+		for (int j = -30.5; j <= 30.5; j++)
+		{
+			int p = gSpatialDatabase->getCellIndexFromLocation(i, j);
+			if (map[p] != a.canBeTraversed(p))
+			{
+				map[p] = a.canBeTraversed(p);
+				b = true;
+				if (map[p] == true)
+				{
+					new_place[p] = true;
+				}
+				else
+				{
+					new_wall[p] = true;
+				}
+			}
+		}
+	}
+
+	if (b)
+	{
+		((SearchAgent*)_agents[0])->computePlan(new_place, new_wall);
 	}
 }
 

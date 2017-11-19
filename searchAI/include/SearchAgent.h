@@ -64,7 +64,7 @@ public:
 	/*
 	computePlan calls the A* function to compute the path and store in in the global __path variable.
 	*/
-	void computePlan();
+	void computePlan(std::unordered_map <int, bool> new_wall = {}, std::unordered_map <int, bool> new_place = {});
 	SteerLib::AStarPlanner astar;
 
 protected:

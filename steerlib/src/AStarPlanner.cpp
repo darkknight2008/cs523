@@ -69,22 +69,25 @@ namespace SteerLib
 
 
 
-	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
+	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, std::unordered_map <int, bool> new_wall, std::unordered_map <int, bool> new_palce, bool append_to_path)
 	{
 		gSpatialDatabase = _gSpatialDatabase;
 
+		std::cerr << "\n test" << std::endl;
+
+		return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
+
+		//return false;
 		//float epsilon = 1;
 		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
-		float init_epsilon = 8;
-		float decreaseRate = 8;
-		return ARAstar(init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+		//float init_epsilon = 8;
+		//float decreaseRate = 8;
+		//return ARAstar(init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 	}
 
 	bool AStarPlanner::weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
 	{
-		float infty = 9999999999999999;
-
 		std::vector <AStarPlannerNode*> OPEN;
 		std::unordered_map <int, AStarPlannerNode*> CLOSE;
 		std::unordered_map <int, AStarPlannerNode*> gVALUE;
@@ -167,7 +170,6 @@ namespace SteerLib
 
 	bool AStarPlanner::ARAstar(float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
 	{
-		float infty = 9999999999999999;
 		float epsilon = init_epsilon;
 
 		std::vector <AStarPlannerNode*> OPEN;
@@ -294,10 +296,146 @@ namespace SteerLib
 		return true;
 	}
 
-	bool AStarPlanner::ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
+	bool AStarPlanner::ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, std::unordered_map <int, bool>& new_wall, std::unordered_map <int, bool>& new_palce, bool append_to_path)
 	{
-		//todo
+		dgSpatialDatabase = _gSpatialDatabase;
+		std::list<Util::Point> neighbours;
+		AStarPlannerNode *Vp;
+		AStarPlannerNode *Up;
+		dStart = AStarPlannerNode(start, infty, infty + getH(start, start), NULL);
+		if (new_wall.size() == 0 && new_palce.size() == 0)
+		{
+			std::cerr << "1 test" << std::endl;
+			
+			dGoal = AStarPlannerNode(goal, 0, getH(goal, start), NULL);
+			dgVALUE[_gSpatialDatabase->getCellIndexFromLocation(dStart.point)] = &dStart;
+			dgVALUE[_gSpatialDatabase->getCellIndexFromLocation(dGoal.point)] = &dGoal;
+			dGoal.rhs = 0;
+
+			dOPEN.push_back(&dStart);
+			dOPEN.push_back(&dGoal);
+		}
+		else
+		{
+			for (std::unordered_map <int, bool>::iterator it = new_wall.begin(); it != new_wall.end(); ++it)
+			{
+				Util::Point n;
+				_gSpatialDatabase->getLocationFromIndex(it->first, n);
+				neighbours = getNeighoburs(n, _gSpatialDatabase);
+				for (std::list<Util::Point>::iterator u = neighbours.begin(); u != neighbours.end(); ++u)
+				{
+					UpdateState(*u);
+				}
+			}
+			for (std::unordered_map <int, bool>::iterator it = new_palce.begin(); it != new_palce.end(); ++it)
+			{
+				Util::Point n;
+				_gSpatialDatabase->getLocationFromIndex(it->first, n);
+				neighbours = getNeighoburs(n, _gSpatialDatabase);
+				for (std::list<Util::Point>::iterator u = neighbours.begin(); u != neighbours.end(); ++u)
+				{
+					UpdateState(*u);
+				}
+			}
+			
+			//do the update
+		}
+
+		while (!dOPEN.empty() || dStart.rhs != dStart.g)
+		{
+			Vp = dOPEN[dOPEN.size() - 1];
+
+			dOPEN.pop_back();
+
+			std::cerr << "2 test" << std::endl;
+			std::cerr << Vp->point << std::endl;
+
+			if (Vp->point == dStart.point)
+			{
+				if (!Vp->parent)
+				{
+					return false;
+				}
+				std::cerr << "almost!" << std::endl;
+				std::cerr << Vp->point << std::endl;
+				generatePath(dGoal, dStart, agent_path);
+				std::reverse(agent_path.begin(), agent_path.end());
+				return true;
+			}
+
+			dCLOSE[dgSpatialDatabase->getCellIndexFromLocation(Vp->point)] = Vp;
+			neighbours = getNeighoburs(Vp->point, dgSpatialDatabase);
+
+			if (Vp->g > Vp->rhs)
+			{
+				Vp->g = Vp->rhs;
+			}
+			else
+			{
+				Vp->g = infty;
+				std::cerr << "2.5 test" << std::endl;
+				UpdateState(Vp->point);
+			}
+			for (std::list<Util::Point>::iterator u = neighbours.begin(); u != neighbours.end(); ++u)
+			{
+				std::cerr << "3 test" << *u << std::endl;
+				UpdateState(*u);
+			}
+			
+		}
 		return false;
+	}
+
+	float AStarPlanner::dKey(AStarPlannerNode *p)
+	{
+		return MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart.point);
+	}
+
+	bool  AStarPlanner::dCompare(AStarPlannerNode *p, AStarPlannerNode *q)
+	{
+		return dKey(p) > dKey(q);
+	}
+
+	void AStarPlanner::UpdateState(Util::Point u)
+	{
+		AStarPlannerNode *U;
+		if (dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(u)) == dgVALUE.end())
+		{
+			//new node
+			U = new AStarPlannerNode(u, infty, infty + getH(u, dStart.point), NULL);
+			dgVALUE[dgSpatialDatabase->getCellIndexFromLocation(U->point)] = U;
+		}
+		else
+		{
+			U = dgVALUE.find(dgSpatialDatabase->getCellIndexFromLocation(u))->second;
+		}
+		if (U->point != dGoal.point)
+		{
+			U->rhs = 10 * infty;
+			std::list<Util::Point> neighbours = getNeighoburs(u, gSpatialDatabase);
+			for (std::list<Util::Point>::iterator w = neighbours.begin(); w != neighbours.end(); ++w)
+			{
+				if (!(dgVALUE.find(gSpatialDatabase->getCellIndexFromLocation(*w)) == dgVALUE.end()))
+				{
+					//if we see that Node before
+					if (canBeTraversed(gSpatialDatabase->getCellIndexFromLocation(u)) && canBeTraversed(gSpatialDatabase->getCellIndexFromLocation(*w)))
+					{
+						U->rhs = MIN(U->rhs, dgVALUE[gSpatialDatabase->getCellIndexFromLocation(*w)]->g + Util::distanceBetween(u, *w));
+						std::cerr << "4 test" << u << *w << U->rhs << std::endl;
+					}
+				}
+			}
+		}
+		//dOPEN.erase(std::find(dOPEN.begin(), dOPEN.end(), U));
+		dOPEN.erase(std::remove(dOPEN.begin(), dOPEN.end(), U), dOPEN.end());
+		if (U->g != U->rhs)
+		{
+			dOPEN.push_back(U);
+			std::sort(dOPEN.begin(), dOPEN.end(), 
+				[&](AStarPlannerNode *p, AStarPlannerNode *q) {return (MIN(p->g, p->rhs) + 0.9999 * getH(p->point, dStart.point) > MIN(q->g, q->rhs) + 0.9999 * getH(q->point, dStart.point)); }
+				);
+		}
+		return;
 	}
 
 	float AStarPlanner::getH(Util::Point a, Util::Point b)

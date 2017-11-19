@@ -34,6 +34,7 @@ namespace SteerLib
 		public:
 			double g;
 			double f;
+			double rhs;
 			Util::Point point;
 			AStarPlannerNode* parent;
 			AStarPlannerNode() { };
@@ -43,6 +44,7 @@ namespace SteerLib
 				f = _f;
 				point = _point;
 				parent = _parent;
+				rhs = 9999999999999999;
 			}
 
 			//bool operator<(AStarPlannerNode other) const
@@ -63,6 +65,10 @@ namespace SteerLib
 	class STEERLIB_API AStarPlanner{
 		public:
 			AStarPlanner();
+			AStarPlanner(SteerLib::SpatialDataBaseInterface * _gSpatialDatabase)
+			{
+				gSpatialDatabase = _gSpatialDatabase;
+			};
 			~AStarPlanner();
 			// NOTE: There are four indices that need to be disambiguated
 			// -- Util::Points in 3D space(with Y=0)
@@ -85,6 +91,7 @@ namespace SteerLib
 			*/
 			Util::Point getPointFromGridIndex(int id);
 
+			SteerLib::SpatialDataBaseInterface * gSpatialDatabase;
 			/*
 				@function computePath
 				DO NOT CHANGE THE DEFINITION OF THIS FUNCTION
@@ -97,15 +104,25 @@ namespace SteerLib
 				append_to_path : An optional argument to append to agent_path instead of overwriting it.
 			*/
 
-			bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+			bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, std::unordered_map <int, bool> new_wall = {}, std::unordered_map <int, bool> new_palce = {}, bool append_to_path = false);
 		private:
-			SteerLib::SpatialDataBaseInterface * gSpatialDatabase;
+			SteerLib::SpatialDataBaseInterface * dgSpatialDatabase;
+			std::vector <AStarPlannerNode*> dOPEN;
+			std::unordered_map <int, AStarPlannerNode*> dCLOSE;
+			std::unordered_map <int, AStarPlannerNode*> dgVALUE;
+			AStarPlannerNode dStart;
+			AStarPlannerNode dGoal;
+			float dKey(AStarPlannerNode *p);
+			void UpdateState(Util::Point u);
+			bool dCompare(AStarPlannerNode *p, AStarPlannerNode *q);
+
+			float infty = 9999999999999999;
 
 			float getH(Util::Point a, Util::Point b);
 
 			bool weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
 			bool ARAstar(float init_epsilon, float decreaseRate, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
-			bool ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path = false);
+			bool ADstar(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, std::unordered_map<int, bool>& new_wall, std::unordered_map <int, bool>& new_palce, bool append_to_path = false);
 	
 			void generatePath(AStarPlannerNode& Start, AStarPlannerNode& Goal, std::vector<Util::Point>& agent_path);
 			std::list<Util::Point> getNeighoburs(Util::Point v, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase);
