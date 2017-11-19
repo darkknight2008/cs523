@@ -389,13 +389,15 @@ namespace SteerLib
 		int oldG = _vector[m]->g;
 		int newF = changeNode->f;
 		int newG = changeNode->g;
-		_vector[m] = changeNode;
 		if (newF < oldF || (newF == oldF && newG < oldG))
 		{
+			_vector[m] = changeNode;
 			BubbleUp(m);
+			
 		}
 		else
 		{
+			_vector[m] = changeNode;
 			BubbleDown(m);
 		}
 	}
