@@ -73,22 +73,27 @@ namespace SteerLib
 	{
 		gSpatialDatabase = _gSpatialDatabase;
 
-		std::cerr << "\n test" << std::endl;
+		//std::cerr << "\n test" << std::endl;
 
-		return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
-
+		//return ADstar(agent_path, start, goal, _gSpatialDatabase, new_wall, new_palce);
 		//return false;
-		//float epsilon = 1;
-		//return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 
+		//!!!!!!!!!!!!!!!! this is Weighted A*  !!!!!!!!!!!!!!!!!!
+		float epsilon = 8;
+		return weightedAstar(epsilon, agent_path, start, goal, _gSpatialDatabase, append_to_path);
+
+		//!!!!!!!!!!!!!!!! this is ARA*  !!!!!!!!!!!!!!!!!!
 		//float init_epsilon = 8;
-		//float decreaseRate = 8;
+		//float decreaseRate = 2;
 		//return ARAstar(init_epsilon, decreaseRate, agent_path, start, goal, _gSpatialDatabase, append_to_path);
 	}
 
 	bool AStarPlanner::weightedAstar(float epsilon, std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::SpatialDataBaseInterface * _gSpatialDatabase, bool append_to_path)
 	{
-		std::vector <AStarPlannerNode*> OPEN;
+		//std::vector <AStarPlannerNode*> OPEN;
+
+		MinHeap OPEN;
+
 		std::unordered_map <int, AStarPlannerNode*> CLOSE;
 		std::unordered_map <int, AStarPlannerNode*> gVALUE;
 
@@ -100,17 +105,23 @@ namespace SteerLib
 		gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Start.point)] = &Start;
 		gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Goal.point)] = &Goal;
 
-		OPEN.push_back(&Goal);
-		OPEN.push_back(&Start);
+		//OPEN.push_back(&Goal);
+		//OPEN.push_back(&Start);
+
+		OPEN.Insert(&Goal);
+		OPEN.Insert(&Start);
 
 		AStarPlannerNode *Vp;
 		AStarPlannerNode *Up;
 
-		while (!OPEN.empty())
+		//while (!OPEN.empty())
+		while (OPEN.count != 0)
 		{
-			Vp = OPEN[OPEN.size() - 1];
+			//Vp = OPEN[OPEN.size() - 1];
+			//OPEN.pop_back();
 
-			OPEN.pop_back();
+			Vp = OPEN.GetMin();
+			OPEN.DeleteMin();
 
 			if (Vp->point == Goal.point)
 			{
@@ -141,8 +152,11 @@ namespace SteerLib
 							AStarPlannerNode *Up = new AStarPlannerNode(*u, g, g + epsilon * getH(*u, goal), p);
 							gVALUE[_gSpatialDatabase->getCellIndexFromLocation(Up->point)] = Up;
 
-							OPEN.push_back(Up);
-							std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+							//OPEN.push_back(Up);
+							//std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+						
+							OPEN.Insert(Up);
+						
 						}
 						else
 						{
@@ -152,7 +166,10 @@ namespace SteerLib
 								Up->f += g - Up->g;
 								Up->g = g;
 								Up->parent = Vp;
-								std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+								//std::sort(OPEN.begin(), OPEN.end(), [](AStarPlannerNode *a, AStarPlannerNode *b) {return (a->f + 0.0000001 * a->g > b->f + 0.0000001 * b->g); });
+							
+								OPEN.changeKey(Up);
+							
 							}
 						}
 					}
@@ -482,4 +499,121 @@ namespace SteerLib
 		}
 		return neighbours;
 	}
+
+
+	void MinHeap::BubbleDown(int index)
+	{
+		int leftChildIndex = 2 * index + 1;
+		int rightChildIndex = 2 * index + 2;
+
+		if (leftChildIndex >= count)
+			return; //index is a leaf
+
+		int minIndex = index;
+
+		if (_vector[index]->f > _vector[leftChildIndex]->f)
+		{
+			minIndex = leftChildIndex;
+		}
+
+		if ((_vector[index]->f == _vector[leftChildIndex]->f) && (_vector[index]->g > _vector[leftChildIndex]->g))
+		{
+			minIndex = leftChildIndex;
+		}
+
+		if ((rightChildIndex < count) && (_vector[minIndex]->f > _vector[rightChildIndex]->f))
+		{
+			minIndex = rightChildIndex;
+		}
+		if ((rightChildIndex < count) && (_vector[minIndex]->f == _vector[rightChildIndex]->f) && (_vector[minIndex]->g > _vector[rightChildIndex]->g))
+		{
+			minIndex = rightChildIndex;
+		}
+
+		if (minIndex != index)
+		{
+			//need to swap
+			AStarPlannerNode* temp = _vector[index];
+			_vector[index] = _vector[minIndex];
+			_vector[minIndex] = temp;
+			BubbleDown(minIndex);
+		}
+	}
+	void MinHeap::BubbleUp(int index)
+	{
+		if (index == 0)
+			return;
+
+		int parentIndex = (index - 1) / 2;
+
+		if (_vector[parentIndex]->f > _vector[index]->f)
+		{
+			AStarPlannerNode* temp = _vector[parentIndex];
+			_vector[parentIndex] = _vector[index];
+			_vector[index] = temp;
+			BubbleUp(parentIndex);
+		}
+		else if ((_vector[parentIndex]->f == _vector[index]->f) && (_vector[parentIndex]->g > _vector[index]->g))
+		{
+			AStarPlannerNode* temp = _vector[parentIndex];
+			_vector[parentIndex] = _vector[index];
+			_vector[index] = temp;
+			BubbleUp(parentIndex);
+		}
+	}
+
+	void MinHeap::Insert(AStarPlannerNode* newNode)
+	{
+		_vector.push_back(newNode);
+		count++;
+		BubbleUp(count - 1);
+	}
+
+	void MinHeap::changeKey(AStarPlannerNode* changeNode)
+	{
+		int m;
+		for (int a = 0; a < count; a++)
+		{
+			if (_vector[a]->point == changeNode->point)
+			{
+				m = a;
+				break;
+			}
+		}
+		int oldF = _vector[m]->f;
+		int oldG = _vector[m]->g;
+		int newF = changeNode->f;
+		int newG = changeNode->g;
+		if (newF < oldF || (newF == oldF && newG < oldG))
+		{
+			_vector[m] = changeNode;
+			BubbleUp(m);
+
+		}
+		else
+		{
+			_vector[m] = changeNode;
+			BubbleDown(m);
+		}
+	}
+
+	void MinHeap::DeleteMin()
+	{
+		//int length = _vector.size();
+		if (count == 0)
+		{
+			return;
+		}
+
+		_vector[0] = _vector[count - 1];
+		_vector.pop_back();
+		count--;
+		BubbleDown(0);
+	}
+
+	AStarPlannerNode* MinHeap::GetMin()
+	{
+		return _vector[0];
+	}
+
 }
